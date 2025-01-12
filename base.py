@@ -1,7 +1,11 @@
 import numpy as np
+from util import as_array
 
 class Variable:
     def __init__(self, data):
+        if data is not None:
+            if not isinstance(data, np.ndarray):
+                raise TypeError(f'{type(data)}는 지원하지 않습니다.')
         self.data = data
         self.grad = None
         self.creator = None
@@ -24,8 +28,8 @@ class Function:
     def __call__(self, input: Variable):
         x = input.data
         y = self.forward(x)
-        output = Variable(y)
-        output.set_creator(self) #출력 변수에 창조자를 자기 자신으로 설정
+        output = Variable(as_array(y)) # 변수가 ndarray가 되도록 
+        output.set_creator(self) # 출력 변수에 창조자를 자기 자신으로 설정
         self.input = input
         self.output = output
         return output
