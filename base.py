@@ -4,12 +4,28 @@ class Variable:
     def __init__(self, data):
         self.data = data
         self.grad = None
+        self.creator = None
+
+    def set_creator(self, func):
+        self.creator = func
+
+    def backward(self):
+        funcs = [self.creator]
+        while funcs:
+            f = funcs.pop() # 함수 가져오기
+            x, y = f.input, f.output
+            x.grad = f.backward(y.grad)
+            if x.creator is not None:
+                funcs.append(x.creator)
 
 class Function:
     def __call__(self, input: Variable):
         x = input.data
         y = self.forward(x)
         output = Variable(y)
+        output.set_creator(self) #출력 변수에 창조자를 자기 자신으로 설정
+        self.input = input
+        self.output = output
         return output
     
     def forward(self,x):
@@ -38,10 +54,16 @@ class Exp(Function):
         gx = np.exp(x) * gy
         return gx
 
-# 중앙 차분
-def numerical_diff(f:Function, x:Variable, eps=1e-4):
-    x0 = Variable(x.data - eps)
-    x1 = Variable(x.data + eps)
-    y0 = f(x0)
-    y1 = f(x1)
-    return (y1.data - y0.data) / (2*eps)
+
+A = Square()
+B = Exp()
+C = Square()
+
+x = Variable(np.array(0.5))
+a = A(x) # creator : A ,output
+b = B(a)
+y = C(b)
+
+y.grad = np.array(1.0)
+y.backward()
+print(x.grad)
