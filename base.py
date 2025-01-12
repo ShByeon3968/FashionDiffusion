@@ -10,6 +10,8 @@ class Variable:
         self.creator = func
 
     def backward(self):
+        if self.grad is None:
+            self.grad = np.ones_like(self.data)
         funcs = [self.creator]
         while funcs:
             f = funcs.pop() # 함수 가져오기
@@ -53,17 +55,3 @@ class Exp(Function):
         x = self.input.data
         gx = np.exp(x) * gy
         return gx
-
-
-A = Square()
-B = Exp()
-C = Square()
-
-x = Variable(np.array(0.5))
-a = A(x) # creator : A ,output
-b = B(a)
-y = C(b)
-
-y.grad = np.array(1.0)
-y.backward()
-print(x.grad)
