@@ -19,10 +19,15 @@ class Variable:
         funcs = [self.creator]
         while funcs:
             f = funcs.pop() # 함수 가져오기
-            x, y = f.input, f.output
-            x.grad = f.backward(y.grad)
-            if x.creator is not None:
-                funcs.append(x.creator)
+            gys = [output.grad for output in f.outputs]
+            gxs = f.backward(*gys)
+            if not isinstance(gxs, tuple):
+                gxs = (gxs,)
+
+            for x, gx in zip(f.inputs, gxs):
+                x.grad = gx
+                if x.creator is not None:
+                    funcs.append(x.creator)
 
 class Function:
     def __call__(self, *inputs: list):
@@ -31,8 +36,8 @@ class Function:
         outputs = [Variable(as_array(y)) for y in ys] # 변수가 ndarray가 되도록 
         for output in outputs:
             output.set_creator(self) # 출력 변수에 창조자를 자기 자신으로 설정
-        self.input = inputs
-        self.output = outputs
+        self.inputs = inputs
+        self.outputs = outputs
         return outputs if len(outputs) > 1 else outputs[0]
     
     def forward(self,x):
@@ -47,7 +52,7 @@ class Square(Function):
         return x ** 2
 
     def backward(self, gy):
-        x = self.input.data
+        x = self.inputs[0].data
         gx = 2 * x * gy
         return gx
     
@@ -57,12 +62,16 @@ class Exp(Function):
         return np.exp(x)
     
     def backward(self, gy):
-        x = self.input.data
+        x = self.inputs[0].data
         gx = np.exp(x) * gy
         return gx
-    
+
+# 인수 -> 가변 길이
 class Add(Function):
     def forward(self,xs):
         x0, x1 = xs
         y = x0 + x1
-        return (y,)
+        return y
+    
+    def backward(self, gy):
+        return gy, gy
