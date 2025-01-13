@@ -1,4 +1,4 @@
-from base import Variable, Function , Square, Exp
+from base import Variable, Function , Square, Exp, Add
 
 # 중앙 차분
 def numerical_diff(f:Function, x:Variable, eps=1e-4):
@@ -13,3 +13,6 @@ def square(x):
 
 def exp(x):
     return Exp()(x)
+
+def add(x0, x1):
+    return Add()(x0,x1)

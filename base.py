@@ -25,14 +25,15 @@ class Variable:
                 funcs.append(x.creator)
 
 class Function:
-    def __call__(self, input: Variable):
-        x = input.data
-        y = self.forward(x)
-        output = Variable(as_array(y)) # 변수가 ndarray가 되도록 
-        output.set_creator(self) # 출력 변수에 창조자를 자기 자신으로 설정
-        self.input = input
-        self.output = output
-        return output
+    def __call__(self, *inputs: list):
+        xs = [x.data for x in inputs]
+        ys = self.forward(xs)
+        outputs = [Variable(as_array(y)) for y in ys] # 변수가 ndarray가 되도록 
+        for output in outputs:
+            output.set_creator(self) # 출력 변수에 창조자를 자기 자신으로 설정
+        self.input = inputs
+        self.output = outputs
+        return outputs if len(outputs) > 1 else outputs[0]
     
     def forward(self,x):
         raise NotImplementedError()
@@ -59,3 +60,9 @@ class Exp(Function):
         x = self.input.data
         gx = np.exp(x) * gy
         return gx
+    
+class Add(Function):
+    def forward(self,xs):
+        x0, x1 = xs
+        y = x0 + x1
+        return (y,)
