@@ -1,31 +1,28 @@
 import os
-import re
+import json
 
-# 설정
-image_folder = "hanbok_resized"  # 이미지가 저장된 경로
-base_prompt = "photo of a hanbok outfit, full body, high quality"  # 공통 프롬프트
+def generate_metadata_jsonl(image_dir, output_path, default_prompt):
+    image_extensions = {'.jpg', '.jpeg', '.png'}
+    image_files = sorted([
+        f for f in os.listdir(image_dir)
+        if os.path.splitext(f)[-1].lower() in image_extensions
+    ])
 
-# 정제 함수: 파일명에서 키워드 추출
-def extract_keywords(filename):
-    name = os.path.splitext(filename)[0]  # 확장자 제거
-    name = re.sub(r'[^a-zA-Z0-9_]', ' ', name)  # 특수문자 제거
-    words = name.lower().split('_')  # 구분자 기준 나누기
-    keywords = ' '.join([w for w in words if w not in ['hanbok', 'photo', 'image']])  # 의미 없는 단어 제거
-    return keywords.strip()
+    with open(output_path, 'w', encoding='utf-8') as jsonl_file:
+        for image_file in image_files:
+            entry = {
+                "file_name": image_file,
+                "text": default_prompt
+            }
+            jsonl_file.write(json.dumps(entry, ensure_ascii=False) + '\n')
 
-# 생성 루프
-for fname in os.listdir(image_folder):
-    if fname.lower().endswith(".jpg"):
-        txt_name = os.path.splitext(fname)[0] + ".txt"
-        txt_path = os.path.join(image_folder, txt_name)
+    print(f"[✓] metadata.jsonl 생성 완료: {output_path}")
+    print(f"총 이미지 수: {len(image_files)}")
 
-        # 키워드 추출 및 프롬프트 생성
-        keyword_part = extract_keywords(fname)
-        full_prompt = base_prompt
-        if keyword_part:
-            full_prompt += f", {keyword_part}"
+# 예시 사용법
+if __name__ == "__main__":
+    image_dir = "./hanbok_resized"  # 이미지가 들어있는 폴더 경로
+    output_jsonl = "./hanbok_resized/metadata.jsonl"  # 생성할 jsonl 경로
+    default_prompt = "photo of a hanbok outfit"  # 공통 prompt
 
-        with open(txt_path, "w", encoding="utf-8") as f:
-            f.write(full_prompt)
-
-        print(f"Created: {txt_path} → {full_prompt}")
+    generate_metadata_jsonl(image_dir, output_jsonl, default_prompt)
